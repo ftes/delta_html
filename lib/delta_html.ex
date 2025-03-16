@@ -99,8 +99,7 @@ defmodule DeltaHtml do
     chunk(ops, [node | html], [])
   end
 
-  defp chunk([%{"attributes" => %{"code-block" => language}} | ops], html, line)
-       when is_binary(language) do
+  defp chunk([%{"attributes" => %{"code-block" => language}} | ops], html, line) when is_binary(language) do
     node = {"pre", [{"data-language", language}], line}
     chunk(ops, [node | html], [])
   end
@@ -152,8 +151,7 @@ defmodule DeltaHtml do
   end
 
   defp inline(%{"attributes" => %{"background" => color}} = op) do
-    {"span", [{"style", "background-color: #{color};"}],
-     [op |> delete_attribute("background") |> inline()]}
+    {"span", [{"style", "background-color: #{color};"}], [op |> delete_attribute("background") |> inline()]}
   end
 
   defp inline(%{"attributes" => %{"font" => "serif"}} = op) do

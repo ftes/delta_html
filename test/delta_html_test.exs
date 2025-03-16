@@ -1,5 +1,6 @@
 defmodule DeltaHtmlTest do
   use ExUnit.Case, async: true
+
   import DeltaHtml
 
   test "empty input" do
