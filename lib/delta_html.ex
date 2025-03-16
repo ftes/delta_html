@@ -1,7 +1,9 @@
 defmodule DeltaHtml do
   @moduledoc """
   Convert Quill (Slab) [Delta](https://quilljs.com/docs/delta) document format to HTML.
-  Render rich text entered by non technical users for web pages or emails.
+
+  This is useful to display rich text entered by users in your web UI or emails.
+  It sanitizes input (prevents malicious HTML) and allows you to store only the document model (delta) and not also the HTML.
 
   ## Usage
   ```
@@ -9,8 +11,8 @@ defmodule DeltaHtml do
   "<p>word</p>"
   ```
 
-  ## Features
-  Inline
+  ## Supported features
+  ### Inline
   - ✅ Background Color - background
   - ✅ Bold - bold
   - ✅ Color - color
@@ -23,7 +25,7 @@ defmodule DeltaHtml do
   - ✅ Superscript/Subscript - script
   - ✅ Underline - underline
 
-  Block
+  ### Block
   - ✅ Blockquote - blockquote
   - ✅ Header - header
   - ❌ Indent - indent
@@ -35,10 +37,10 @@ defmodule DeltaHtml do
   - ❌ Image - image
   - ❌ Video - video
 
-  Plugins
+  ### Plugins
   - ✅ quill-mention - output as `\#{denotation_char}\#{id}`, e.g. `+name`
 
-  ## ❌ Extensibility
+  ## Extensibility
   Currently there are no extensions points e.g. to support further formats or plugins.
   It's a fairly short single file, so just copy and paste.
 
