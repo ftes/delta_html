@@ -1,21 +1,12 @@
+[![Hex.pm Version](https://img.shields.io/hexpm/v/delta_html)](https://hex.pm/packages/delta_html)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/delta_html/)
+[![License](https://img.shields.io/hexpm/l/delta_html.svg)](https://github.com/ftes/delta_html/blob/main/LICENSE.md)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/ftes/delta_html/elixir.yml)](https://github.com/ftes/delta_html/actions)
+
+
 # DeltaHtml
 
-**TODO: Add description**
+Convert Quill (Slab) [Delta](https://quilljs.com/docs/delta) document format to HTML in Elixir.
+Render rich text entered by non technical users for web pages or emails.
 
-## Installation
-
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `delta_html` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:delta_html, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/delta_html>.
-
+**Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
