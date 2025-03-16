@@ -1,0 +1,37 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Elixir CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+env:
+  MIX_ENV: test
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: "1.18.3" # [Required] Define the Elixir version
+          otp-version: "27.3" # [Required] Define the Erlang/OTP version
+      - name: Check Formatting
+        run: mix format --check-formatted
+      - name: Compiles without warnings
+        run: mix compile --warnings-as-errors
+      - name: Run tests
+        run: "mix test --warnings-as-errors"
