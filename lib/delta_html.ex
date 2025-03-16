@@ -86,6 +86,7 @@ defmodule DeltaHtml do
     chunk(ops, [node | html], [])
   end
 
+  # Blocks
   defp chunk([%{"attributes" => %{"header" => level}} | ops], html, line) do
     node = {"h#{level}", [], line}
     chunk(ops, [node | html], [])
@@ -128,62 +129,40 @@ defmodule DeltaHtml do
     chunk(ops, [node | html], [])
   end
 
-  defp inline(%{"attributes" => %{"underline" => true}} = op) do
-    {"u", [], [op |> delete_attribute("underline") |> inline()]}
+  # Styles
+  for {attr, tag} <- [underline: "u", italic: "em", bold: "strong", strike: "s", code: "code"] do
+    attr = to_string(attr)
+
+    defp inline(%{"attributes" => %{unquote(attr) => true}} = op) do
+      {unquote(tag), [], [op |> delete_attribute(unquote(attr)) |> inline()]}
+    end
   end
 
-  defp inline(%{"attributes" => %{"italic" => true}} = op) do
-    {"em", [], [op |> delete_attribute("italic") |> inline()]}
+  for {attr, style} <- [color: "color", background: "background-color"] do
+    attr = to_string(attr)
+
+    defp inline(%{"attributes" => %{unquote(attr) => value}} = op) do
+      {"span", [{"style", "#{unquote(style)}: #{value};"}], [op |> delete_attribute(unquote(attr)) |> inline()]}
+    end
   end
 
-  defp inline(%{"attributes" => %{"bold" => true}} = op) do
-    {"strong", [], [op |> delete_attribute("bold") |> inline()]}
+  defp inline(%{"attributes" => %{"font" => family}} = op) when family in ~w(monospace serif) do
+    {"span", [{"style", "font-family: #{family};"}], [op |> delete_attribute("font") |> inline()]}
   end
 
-  defp inline(%{"attributes" => %{"strike" => true}} = op) do
-    {"s", [], [op |> delete_attribute("strike") |> inline()]}
+  defp inline(%{"attributes" => %{"size" => size}} = op) when size in ~w(small large huge) do
+    scale =
+      case size do
+        "small" -> 0.75
+        "large" -> 1.5
+        "huge" -> 2.5
+      end
+
+    {"span", [{"style", "font-size: #{scale}em;"}], [op |> delete_attribute("size") |> inline()]}
   end
 
   defp inline(%{"attributes" => %{"link" => href}} = op) do
     {"a", [{"href", href}, {"target", "_blank"}], [op |> delete_attribute("link") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"color" => color}} = op) do
-    {"span", [{"style", "color: #{color};"}], [op |> delete_attribute("color") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"background" => color}} = op) do
-    {"span", [{"style", "background-color: #{color};"}], [op |> delete_attribute("background") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"font" => "serif"}} = op) do
-    {"span", [{"style", "font-family: serif;"}], [op |> delete_attribute("font") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"font" => "monospace"}} = op) do
-    {"span", [{"style", "font-family: monospace;"}], [op |> delete_attribute("font") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"font" => _}} = op) do
-    # Ignore unsupported font families
-    op |> delete_attribute("font") |> inline()
-  end
-
-  defp inline(%{"attributes" => %{"size" => "small"}} = op) do
-    {"span", [{"style", "font-size: 0.75em;"}], [op |> delete_attribute("size") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"size" => "large"}} = op) do
-    {"span", [{"style", "font-size: 1.5em;"}], [op |> delete_attribute("size") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"size" => "huge"}} = op) do
-    {"span", [{"style", "font-size: 2.5em;"}], [op |> delete_attribute("size") |> inline()]}
-  end
-
-  defp inline(%{"attributes" => %{"size" => _}} = op) do
-    # Ignore unsupported sizes
-    op |> delete_attribute("size") |> inline()
   end
 
   defp inline(%{"attributes" => %{"script" => "super"}} = op) do
@@ -194,15 +173,7 @@ defmodule DeltaHtml do
     {"sub", [], [op |> delete_attribute("script") |> inline()]}
   end
 
-  defp inline(%{"attributes" => %{"script" => _}} = op) do
-    # Ignore unsupported script values
-    op |> delete_attribute("script") |> inline()
-  end
-
-  defp inline(%{"attributes" => %{"code" => true}} = op) do
-    {"code", [], [op |> delete_attribute("code") |> inline()]}
-  end
-
+  # quill-mention
   defp inline(%{"insert" => %{"mention" => mention}}) do
     %{"denotationChar" => prefix, "id" => id} = mention
     "#{prefix}#{id}"
@@ -217,6 +188,7 @@ defmodule DeltaHtml do
     end
   end
 
+  # Add list item: Merge into existing list if possible, else add new list
   defp add_li(html, node, tag, indent) do
     case html do
       [{^tag, _, _} = list | html] -> [merge_li(list, node, tag, indent) | html]
@@ -239,6 +211,7 @@ defmodule DeltaHtml do
     end
   end
 
+  # Deep reverse after processing all ops
   defp reverse(html) when is_list(html), do: html |> Enum.reverse() |> Enum.map(&reverse/1)
   defp reverse({tag, attrs, children}), do: {tag, attrs, reverse(children)}
   defp reverse(other), do: other
