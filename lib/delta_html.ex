@@ -69,88 +69,88 @@ defmodule DeltaHtml do
 
     ops
     |> Enum.map(&Map.put(&1, "line_end?", line_end?.(&1)))
-    |> chunk()
+    |> build_blocks()
     |> Floki.raw_html()
   end
 
-  defp chunk(ops, html_acc \\ [], line_acc \\ [])
-  defp chunk([], html, []), do: reverse(html)
+  defp build_blocks(ops, html_acc \\ [], line_acc \\ [])
+  defp build_blocks([], html, []), do: reverse(html)
 
-  defp chunk([%{"line_end?" => false} = op | ops], html, line) do
-    node = inline(op)
-    chunk(ops, html, [node | line])
+  defp build_blocks([%{"line_end?" => false} = op | ops], html, line) do
+    node = format_inline(op)
+    build_blocks(ops, html, [node | line])
   end
 
-  defp chunk([%{"insert" => text} | ops], html, line) when text != "\n" do
+  defp build_blocks([%{"insert" => text} | ops], html, line) when text != "\n" do
     node = {"p", [], [String.trim_trailing(text, "\n") | line]}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
   # Blocks
-  defp chunk([%{"attributes" => %{"header" => level}} | ops], html, line) do
+  defp build_blocks([%{"attributes" => %{"header" => level}} | ops], html, line) do
     node = {"h#{level}", [], line}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
-  defp chunk([%{"attributes" => %{"blockquote" => true}} | ops], html, line) do
+  defp build_blocks([%{"attributes" => %{"blockquote" => true}} | ops], html, line) do
     node = {"blockquote", [], line}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
-  defp chunk([%{"attributes" => %{"code-block" => true}} | ops], html, line) do
+  defp build_blocks([%{"attributes" => %{"code-block" => true}} | ops], html, line) do
     node = {"pre", [], line}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
-  defp chunk([%{"attributes" => %{"code-block" => language}} | ops], html, line) when is_binary(language) do
+  defp build_blocks([%{"attributes" => %{"code-block" => language}} | ops], html, line) when is_binary(language) do
     node = {"pre", [{"data-language", language}], line}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
-  defp chunk([%{"attributes" => %{"list" => "ordered"} = attrs} | ops], html, line) do
+  defp build_blocks([%{"attributes" => %{"list" => "ordered"} = attrs} | ops], html, line) do
     node = {"li", [], line}
     html = add_li(html, node, "ol", attrs["indent"] || 0)
-    chunk(ops, html, [])
+    build_blocks(ops, html, [])
   end
 
-  defp chunk([%{"attributes" => %{"list" => "bullet"} = attrs} | ops], html, line) do
+  defp build_blocks([%{"attributes" => %{"list" => "bullet"} = attrs} | ops], html, line) do
     node = {"li", [], line}
     html = add_li(html, node, "ul", attrs["indent"] || 0)
-    chunk(ops, html, [])
+    build_blocks(ops, html, [])
   end
 
-  defp chunk([%{"insert" => "\n"} | ops], html, []) do
+  defp build_blocks([%{"insert" => "\n"} | ops], html, []) do
     node = {"p", [], [{"br", [], []}]}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
-  defp chunk([%{"insert" => "\n"} | ops], html, line) do
+  defp build_blocks([%{"insert" => "\n"} | ops], html, line) do
     node = {"p", [], line}
-    chunk(ops, [node | html], [])
+    build_blocks(ops, [node | html], [])
   end
 
   # Styles
   for {attr, tag} <- [underline: "u", italic: "em", bold: "strong", strike: "s", code: "code"] do
     attr = to_string(attr)
 
-    defp inline(%{"attributes" => %{unquote(attr) => true}} = op) do
-      {unquote(tag), [], [op |> delete_attribute(unquote(attr)) |> inline()]}
+    defp format_inline(%{"attributes" => %{unquote(attr) => true}} = op) do
+      {unquote(tag), [], [op |> delete_attribute(unquote(attr)) |> format_inline()]}
     end
   end
 
   for {attr, style} <- [color: "color", background: "background-color"] do
     attr = to_string(attr)
 
-    defp inline(%{"attributes" => %{unquote(attr) => value}} = op) do
-      {"span", [{"style", "#{unquote(style)}: #{value};"}], [op |> delete_attribute(unquote(attr)) |> inline()]}
+    defp format_inline(%{"attributes" => %{unquote(attr) => value}} = op) do
+      {"span", [{"style", "#{unquote(style)}: #{value};"}], [op |> delete_attribute(unquote(attr)) |> format_inline()]}
     end
   end
 
-  defp inline(%{"attributes" => %{"font" => family}} = op) when family in ~w(monospace serif) do
-    {"span", [{"style", "font-family: #{family};"}], [op |> delete_attribute("font") |> inline()]}
+  defp format_inline(%{"attributes" => %{"font" => family}} = op) when family in ~w(monospace serif) do
+    {"span", [{"style", "font-family: #{family};"}], [op |> delete_attribute("font") |> format_inline()]}
   end
 
-  defp inline(%{"attributes" => %{"size" => size}} = op) when size in ~w(small large huge) do
+  defp format_inline(%{"attributes" => %{"size" => size}} = op) when size in ~w(small large huge) do
     scale =
       case size do
         "small" -> 0.75
@@ -158,28 +158,28 @@ defmodule DeltaHtml do
         "huge" -> 2.5
       end
 
-    {"span", [{"style", "font-size: #{scale}em;"}], [op |> delete_attribute("size") |> inline()]}
+    {"span", [{"style", "font-size: #{scale}em;"}], [op |> delete_attribute("size") |> format_inline()]}
   end
 
-  defp inline(%{"attributes" => %{"link" => href}} = op) do
-    {"a", [{"href", href}, {"target", "_blank"}], [op |> delete_attribute("link") |> inline()]}
+  defp format_inline(%{"attributes" => %{"link" => href}} = op) do
+    {"a", [{"href", href}, {"target", "_blank"}], [op |> delete_attribute("link") |> format_inline()]}
   end
 
-  defp inline(%{"attributes" => %{"script" => "super"}} = op) do
-    {"sup", [], [op |> delete_attribute("script") |> inline()]}
+  defp format_inline(%{"attributes" => %{"script" => "super"}} = op) do
+    {"sup", [], [op |> delete_attribute("script") |> format_inline()]}
   end
 
-  defp inline(%{"attributes" => %{"script" => "sub"}} = op) do
-    {"sub", [], [op |> delete_attribute("script") |> inline()]}
+  defp format_inline(%{"attributes" => %{"script" => "sub"}} = op) do
+    {"sub", [], [op |> delete_attribute("script") |> format_inline()]}
   end
 
   # quill-mention
-  defp inline(%{"insert" => %{"mention" => mention}}) do
+  defp format_inline(%{"insert" => %{"mention" => mention}}) do
     %{"denotationChar" => prefix, "id" => id} = mention
     "#{prefix}#{id}"
   end
 
-  defp inline(%{"insert" => text}) when is_binary(text), do: text
+  defp format_inline(%{"insert" => text}) when is_binary(text), do: text
 
   defp delete_attribute(op, key) do
     case Map.delete(op["attributes"], key) do
