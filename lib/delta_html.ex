@@ -32,7 +32,7 @@ defmodule DeltaHtml do
   - ✅ List - list
   - ✅ Text Alignment - align
   - ✅ Text Direction - direction
-  - ✅ Code Block - code-block
+  - ❌ Code Block - code-block
   - ❌ Formula - formula (requires KaTeX)
   - ❌ Image - image
   - ❌ Video - video
@@ -65,13 +65,28 @@ defmodule DeltaHtml do
       "<p>word</p>"
   """
   def delta_to_html(ops) when is_list(ops) do
-    line_end? = &(is_binary(&1["insert"]) and String.ends_with?(&1["insert"], "\n"))
-
     ops
-    |> Enum.map(&Map.put(&1, "line_end?", line_end?.(&1)))
+    |> Enum.flat_map(&split_lines/1)
     |> build_blocks()
     |> Floki.raw_html()
   end
+
+  defp split_lines(%{"insert" => string} = op) when is_binary(string) do
+    line_end? = String.ends_with?(string, "\n")
+    lines = string |> String.slice(0..if(line_end?, do: -2, else: -1)//1) |> String.split("\n")
+
+    lines
+    |> Enum.with_index(1)
+    |> Enum.map(fn {line, index} ->
+      if index == length(lines) do
+        Map.merge(op, %{"insert" => "#{line}#{if line_end?, do: "\n"}", "line_end?" => line_end?})
+      else
+        %{"insert" => "#{line}\n", "line_end?" => true}
+      end
+    end)
+  end
+
+  defp split_lines(op), do: [Map.put(op, "line_end?", false)]
 
   defp build_blocks(ops, html_acc \\ [], line_acc \\ [])
   defp build_blocks([], html, []), do: reverse(html)
@@ -94,16 +109,6 @@ defmodule DeltaHtml do
 
   defp build_blocks([%{"attributes" => %{"blockquote" => true}} | ops], html, line) do
     node = {"blockquote", [], line}
-    build_blocks(ops, [node | html], [])
-  end
-
-  defp build_blocks([%{"attributes" => %{"code-block" => true}} | ops], html, line) do
-    node = {"pre", [], line}
-    build_blocks(ops, [node | html], [])
-  end
-
-  defp build_blocks([%{"attributes" => %{"code-block" => language}} | ops], html, line) when is_binary(language) do
-    node = {"pre", [{"data-language", language}], line}
     build_blocks(ops, [node | html], [])
   end
 

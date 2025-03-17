@@ -189,7 +189,7 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"bold" => true}, "insert" => ","},
              %{"insert" => "\nthank you.\n"}
            ]) ==
-             "<p><strong>Dear </strong><strong>+first_name</strong><strong>,</strong>\nthank you.</p>"
+             "<p><strong>Dear </strong><strong>+first_name</strong><strong>,</strong></p><p>thank you.</p>"
   end
 
   test "color" do
@@ -323,17 +323,13 @@ defmodule DeltaHtmlTest do
              ~s(<p style="text-align: right;">Right aligned text</p>)
   end
 
-  test "code block" do
+  test "text alignment - multiple blocks" do
     assert delta_to_html([
-             %{"insert" => "function example() {\n  return true;\n}"},
-             %{"attributes" => %{"code-block" => true}, "insert" => "\n"}
-           ]) == "<pre>function example() {\n  return true;\n}</pre>"
-  end
-
-  test "code block with language" do
-    assert delta_to_html([
-             %{"insert" => "function example() {\n  return true;\n}"},
-             %{"attributes" => %{"code-block" => "javascript"}, "insert" => "\n"}
-           ]) == "<pre data-language=\"javascript\">function example() {\n  return true;\n}</pre>"
+             %{"insert" => "left\ncenter"},
+             %{"attributes" => %{"align" => "center"}, "insert" => "\n"},
+             %{"insert" => "right"},
+             %{"attributes" => %{"align" => "right"}, "insert" => "\n"}
+           ]) ==
+             ~s(<p>left</p><p style="text-align: center;">center</p><p style="text-align: right;">right</p>)
   end
 end
