@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Deeply nested lists
 
+### Added
+- Support JSON as input
+
+### Changed
+- Rename to `DeltaHtml.to_html`
+
+
 ## [0.3.0] - 2025-03-17
 ### Added
 - Text alignment and indent 

@@ -4,15 +4,15 @@ defmodule DeltaHtmlTest do
   import DeltaHtml
 
   test "empty input" do
-    assert delta_to_html([%{"insert" => "\n"}]) == "<p><br/></p>"
+    assert to_html([%{"insert" => "\n"}]) == "<p><br/></p>"
   end
 
   test "single word" do
-    assert delta_to_html([%{"insert" => "word\n"}]) == "<p>word</p>"
+    assert to_html([%{"insert" => "word\n"}]) == "<p>word</p>"
   end
 
   test "heading" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "Heading"},
              %{"attributes" => %{"header" => 1}, "insert" => "\n"}
            ]) ==
@@ -20,7 +20,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "bold" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"bold" => true}, "insert" => "bold"},
              %{"insert" => "\n"}
            ]) ==
@@ -28,7 +28,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "italic" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"italic" => true}, "insert" => "italic"},
              %{"insert" => "\n"}
            ]) ==
@@ -36,7 +36,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "underline" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"underline" => true}, "insert" => "underline"},
              %{"insert" => "\n"}
            ]) ==
@@ -44,7 +44,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "underlined header" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"underline" => true}, "insert" => "Header"},
              %{"attributes" => %{"header" => 1}, "insert" => "\n"}
            ]) ==
@@ -52,7 +52,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "multiple inline formattings" do
-    assert delta_to_html([
+    assert to_html([
              %{
                "attributes" => %{"underline" => true, "italic" => true, "bold" => true},
                "insert" => "multiple"
@@ -63,7 +63,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "consecutive inline formattings" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "a"},
              %{"attributes" => %{"bold" => true}, "insert" => "b"},
              %{"insert" => "c\n"}
@@ -72,7 +72,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "link" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "https://example.com"}, "insert" => "link"},
              %{"insert" => "\n"}
            ]) ==
@@ -80,19 +80,19 @@ defmodule DeltaHtmlTest do
   end
 
   test "link sanitization - allowed protocols" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "https://example.com"}, "insert" => "secure"},
              %{"insert" => "\n"}
            ]) ==
              ~s(<p><a href="https://example.com" target="_blank">secure</a></p>)
 
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "http://example.com"}, "insert" => "insecure"},
              %{"insert" => "\n"}
            ]) ==
              ~s(<p><a href="http://example.com" target="_blank">insecure</a></p>)
 
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "mailto:user@example.com"}, "insert" => "email"},
              %{"insert" => "\n"}
            ]) ==
@@ -100,13 +100,13 @@ defmodule DeltaHtmlTest do
   end
 
   test "link sanitization - blocked protocols" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "javascript:alert(1)"}, "insert" => "malicious"},
              %{"insert" => "\n"}
            ]) ==
              "<p>malicious</p>"
 
-    assert delta_to_html([
+    assert to_html([
              %{
                "attributes" => %{"link" => "mailto://foo@bar.com?body=<script>alert('Powned')</script>"},
                "insert" => "malicious"
@@ -115,13 +115,13 @@ defmodule DeltaHtmlTest do
            ]) ==
              "<p>malicious</p>"
 
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
              %{"insert" => "\n"}
            ]) ==
              "<p>malicious</p>"
 
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
              %{"insert" => "\n"}
            ]) ==
@@ -129,13 +129,13 @@ defmodule DeltaHtmlTest do
   end
 
   test "link sanitization - malformed URLs" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => "not-a-url"}, "insert" => "text"},
              %{"insert" => "\n"}
            ]) ==
              "<p>text</p>"
 
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"link" => ""}, "insert" => "text"},
              %{"insert" => "\n"}
            ]) ==
@@ -143,7 +143,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "numbered list" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "1"},
              %{"attributes" => %{"list" => "ordered"}, "insert" => "\n"},
              %{"insert" => "2"},
@@ -153,7 +153,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "numbered list with indent" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "1"},
              %{"attributes" => %{"list" => "ordered"}, "insert" => "\n"},
              %{"insert" => "a"},
@@ -163,7 +163,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "numbered list and bullet list" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "1"},
              %{"attributes" => %{"list" => "ordered"}, "insert" => "\n"},
              %{"insert" => "x"},
@@ -173,7 +173,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "deeply nested lists" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "b1"},
              %{"attributes" => %{"list" => "bullet"}, "insert" => "\n"},
              %{"insert" => "b2"},
@@ -195,7 +195,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "placeholder" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"bold" => true}, "insert" => "Dear "},
              %{
                "attributes" => %{"bold" => true},
@@ -215,7 +215,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "color" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"color" => "#ff0000"}, "insert" => "red text"},
              %{"insert" => "\n"}
            ]) ==
@@ -223,7 +223,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "background color" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"background" => "#ffff00"}, "insert" => "highlighted text"},
              %{"insert" => "\n"}
            ]) ==
@@ -231,7 +231,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "serif font" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"font" => "serif"}, "insert" => "serif text"},
              %{"insert" => "\n"}
            ]) ==
@@ -239,7 +239,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "monospace font" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"font" => "monospace"}, "insert" => "monospace text"},
              %{"insert" => "\n"}
            ]) ==
@@ -247,7 +247,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "unsupported font is ignored" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"font" => "Arial"}, "insert" => "Arial text"},
              %{"insert" => "\n"}
            ]) ==
@@ -255,7 +255,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "small size" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"size" => "small"}, "insert" => "small text"},
              %{"insert" => "\n"}
            ]) ==
@@ -263,7 +263,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "large size" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"size" => "large"}, "insert" => "large text"},
              %{"insert" => "\n"}
            ]) ==
@@ -271,7 +271,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "huge size" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"size" => "huge"}, "insert" => "huge text"},
              %{"insert" => "\n"}
            ]) ==
@@ -279,7 +279,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "indent with newlines" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "zero\none"},
              %{"attributes" => %{"indent" => 1}, "insert" => "\n"},
              %{"insert" => "two"},
@@ -289,7 +289,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "unsupported size is ignored" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"size" => "medium"}, "insert" => "medium text"},
              %{"insert" => "\n"}
            ]) ==
@@ -297,7 +297,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "superscript" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "x"},
              %{"attributes" => %{"script" => "super"}, "insert" => "2"},
              %{"insert" => "\n"}
@@ -306,7 +306,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "subscript" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "H"},
              %{"attributes" => %{"script" => "sub"}, "insert" => "2"},
              %{"insert" => "O\n"}
@@ -315,7 +315,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "unsupported script value is ignored" do
-    assert delta_to_html([
+    assert to_html([
              %{"attributes" => %{"script" => "invalid"}, "insert" => "text"},
              %{"insert" => "\n"}
            ]) ==
@@ -323,7 +323,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "inline code" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "This is "},
              %{"attributes" => %{"code" => true}, "insert" => "inline code"},
              %{"insert" => ".\n"}
@@ -332,7 +332,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "blockquote" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "This is a blockquote"},
              %{"attributes" => %{"blockquote" => true}, "insert" => "\n"}
            ]) ==
@@ -340,7 +340,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "text alignment - center" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "Centered text"},
              %{"attributes" => %{"align" => "center"}, "insert" => "\n"}
            ]) ==
@@ -348,7 +348,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "text alignment - right" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "Right aligned text"},
              %{"attributes" => %{"align" => "right"}, "insert" => "\n"}
            ]) ==
@@ -356,7 +356,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "text alignment - multiple blocks" do
-    assert delta_to_html([
+    assert to_html([
              %{"insert" => "left\ncenter"},
              %{"attributes" => %{"align" => "center"}, "insert" => "\n"},
              %{"insert" => "right"},
@@ -366,7 +366,7 @@ defmodule DeltaHtmlTest do
   end
 
   test "mention with size and indent" do
-    assert delta_to_html([
+    assert to_html([
              %{
                "attributes" => %{"size" => "large"},
                "insert" => %{"mention" => %{"denotationChar" => "+", "id" => "department"}}

@@ -7,7 +7,7 @@ defmodule DeltaHtml do
 
   ## Usage
   ```
-  iex> delta_to_html([%{"insert" => "word\\n"}])
+  iex> DeltaHtml.to_html([%{"insert" => "word\\n"}])
   "<p>word</p>"
   ```
 
@@ -61,15 +61,20 @@ defmodule DeltaHtml do
     Convert Quill Delta to HTML.
 
   ## Examples
-      iex> delta_to_html([%{"insert" => "word\\n"}])
+      iex> to_html([%{"insert" => "word\\n"}])
       "<p>word</p>"
   """
-  def delta_to_html(ops) when is_list(ops) do
-    ops
+  def to_html(delta) do
+    delta
+    |> ops
     |> Enum.flat_map(&split_lines/1)
     |> build_blocks()
     |> Floki.raw_html()
   end
+
+  defp ops(json) when is_binary(json), do: json |> JSON.decode!() |> ops()
+  defp ops(%{"ops" => ops}), do: ops(ops)
+  defp ops(ops) when is_list(ops), do: ops
 
   defp split_lines(%{"insert" => string} = op) when is_binary(string) do
     line_end? = String.ends_with?(string, "\n")
