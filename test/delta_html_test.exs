@@ -172,6 +172,28 @@ defmodule DeltaHtmlTest do
              "<ol><li>1</li></ol><ul><li>x</li></ul>"
   end
 
+  test "deeply nested lists" do
+    assert delta_to_html([
+             %{"insert" => "b1"},
+             %{"attributes" => %{"list" => "bullet"}, "insert" => "\n"},
+             %{"insert" => "b2"},
+             %{"attributes" => %{"list" => "bullet"}, "insert" => "\n"},
+             %{"insert" => "b2.1"},
+             %{"attributes" => %{"indent" => 1, "list" => "bullet"}, "insert" => "\n"},
+             %{"insert" => "b2.1.1"},
+             %{"attributes" => %{"indent" => 2, "list" => "bullet"}, "insert" => "\n"},
+             %{"insert" => "n1.1"},
+             %{"attributes" => %{"indent" => 1, "list" => "ordered"}, "insert" => "\n"},
+             %{"insert" => "n1"},
+             %{"attributes" => %{"list" => "ordered"}, "insert" => "\n"},
+             %{"insert" => "n2"},
+             %{"attributes" => %{"list" => "ordered"}, "insert" => "\n"},
+             %{"insert" => "n2.1.1"},
+             %{"attributes" => %{"indent" => 2, "list" => "ordered"}, "insert" => "\n"}
+           ]) ==
+             "<ul><li>b1</li><li>b2</li><ul><li>b2.1</li><ul><li>b2.1.1</li></ul></ul></ul><ol><ol><li>n1.1</li></ol><li>n1</li><li>n2</li><ol><ol><li>n2.1.1</li></ol></ol></ol>"
+  end
+
   test "placeholder" do
     assert delta_to_html([
              %{"attributes" => %{"bold" => true}, "insert" => "Dear "},
@@ -341,5 +363,16 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"align" => "right"}, "insert" => "\n"}
            ]) ==
              ~s(<p>left</p><p style="text-align: center;">center</p><p style="text-align: right;">right</p>)
+  end
+
+  test "mention with size and indent" do
+    assert delta_to_html([
+             %{
+               "attributes" => %{"size" => "large"},
+               "insert" => %{"mention" => %{"denotationChar" => "+", "id" => "department"}}
+             },
+             %{"attributes" => %{"indent" => 1}, "insert" => "\n\n"}
+           ]) ==
+             ~s(<p style="padding-left: 2em;"><span style="font-size: 1.5em;">+department</span></p><p style="padding-left: 2em;"></p>)
   end
 end

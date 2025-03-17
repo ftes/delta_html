@@ -197,7 +197,7 @@ defmodule DeltaHtml do
   # quill-mention
   defp format_inline(%{"insert" => %{"mention" => mention}}) do
     %{"denotationChar" => prefix, "id" => id} = mention
-     "#{prefix}#{id}"
+    "#{prefix}#{id}"
   end
 
   defp format_inline(%{"insert" => text}) when is_binary(text), do: text
