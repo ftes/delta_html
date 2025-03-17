@@ -256,6 +256,16 @@ defmodule DeltaHtmlTest do
              ~s(<p><span style="font-size: 2.5em;">huge text</span></p>)
   end
 
+  test "indent with newlines" do
+    assert delta_to_html([
+             %{"insert" => "zero\none"},
+             %{"attributes" => %{"indent" => 1}, "insert" => "\n"},
+             %{"insert" => "two"},
+             %{"attributes" => %{"indent" => 2}, "insert" => "\n"}
+           ]) ==
+             ~s(<p>zero</p><p style="padding-left: 2em;">one</p><p style="padding-left: 4em;">two</p>)
+  end
+
   test "unsupported size is ignored" do
     assert delta_to_html([
              %{"attributes" => %{"size" => "medium"}, "insert" => "medium text"},

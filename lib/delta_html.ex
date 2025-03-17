@@ -28,7 +28,7 @@ defmodule DeltaHtml do
   ### Block
   - ✅ Blockquote - blockquote
   - ✅ Header - header
-  - ❌ Indent - indent
+  - ✅ Indent - indent
   - ✅ List - list
   - ✅ Text Alignment - align
   - ✅ Text Direction - direction
@@ -126,6 +126,11 @@ defmodule DeltaHtml do
 
   defp build_blocks([%{"attributes" => %{"align" => align}} | ops], html, line) do
     node = {"p", [{"style", "text-align: #{align};"}], line}
+    build_blocks(ops, [node | html], [])
+  end
+
+  defp build_blocks([%{"attributes" => %{"indent" => indent}} | ops], html, line) do
+    node = {"p", [{"style", "padding-left: #{2 * indent}em;"}], line}
     build_blocks(ops, [node | html], [])
   end
 
