@@ -307,6 +307,22 @@ defmodule DeltaHtmlTest do
              "<blockquote>This is a blockquote</blockquote>"
   end
 
+  test "text alignment - center" do
+    assert delta_to_html([
+             %{"insert" => "Centered text"},
+             %{"attributes" => %{"align" => "center"}, "insert" => "\n"}
+           ]) ==
+             ~s(<p style="text-align: center;">Centered text</p>)
+  end
+
+  test "text alignment - right" do
+    assert delta_to_html([
+             %{"insert" => "Right aligned text"},
+             %{"attributes" => %{"align" => "right"}, "insert" => "\n"}
+           ]) ==
+             ~s(<p style="text-align: right;">Right aligned text</p>)
+  end
+
   test "code block" do
     assert delta_to_html([
              %{"insert" => "function example() {\n  return true;\n}"},

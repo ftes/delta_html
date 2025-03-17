@@ -30,7 +30,7 @@ defmodule DeltaHtml do
   - ✅ Header - header
   - ❌ Indent - indent
   - ✅ List - list
-  - ❌ Text Alignment - align
+  - ✅ Text Alignment - align
   - ✅ Text Direction - direction
   - ✅ Code Block - code-block
   - ❌ Formula - formula (requires KaTeX)
@@ -117,6 +117,11 @@ defmodule DeltaHtml do
     node = {"li", [], line}
     html = add_li(html, node, "ul", attrs["indent"] || 0)
     build_blocks(ops, html, [])
+  end
+
+  defp build_blocks([%{"attributes" => %{"align" => align}} | ops], html, line) do
+    node = {"p", [{"style", "text-align: #{align};"}], line}
+    build_blocks(ops, [node | html], [])
   end
 
   defp build_blocks([%{"insert" => "\n"} | ops], html, []) do
