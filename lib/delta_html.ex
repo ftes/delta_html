@@ -9,6 +9,10 @@ defmodule DeltaHtml do
   ```
   iex> DeltaHtml.to_html([%{"insert" => "word\\n"}])
   "<p>word</p>"
+
+  # With whitespace preservation
+  iex> DeltaHtml.to_html([%{"insert" => "word\\n"}], preserve_whitespace: true)
+  "<div style=\\"white-space: pre-wrap;\\"><p>word</p></div>"
   ```
 
   ## Supported features
@@ -60,21 +64,31 @@ defmodule DeltaHtml do
   @doc """
     Convert Quill Delta to HTML.
 
+  ## Options
+    * `:preserve_whitespace` - When true, wraps the output in a div with white-space: pre-wrap to preserve whitespace. Defaults to false.
+
   ## Examples
       iex> to_html([%{"insert" => "word\\n"}])
       "<p>word</p>"
+
+      iex> to_html([%{"insert" => "word\\n"}], preserve_whitespace: true)
+      "<div style=\\"white-space: pre-wrap;\\"><p>word</p></div>"
   """
-  def to_html(delta) do
+  def to_html(delta, opts \\ []) do
     delta
-    |> ops
+    |> ops()
     |> Enum.flat_map(&split_lines/1)
     |> build_blocks()
+    |> maybe_preserve_whitespace(opts[:preserve_whitespace])
     |> Floki.raw_html()
   end
 
   defp ops(json) when is_binary(json), do: json |> JSON.decode!() |> ops()
   defp ops(%{"ops" => ops}), do: ops(ops)
   defp ops(ops) when is_list(ops), do: ops
+
+  defp maybe_preserve_whitespace(html, true), do: {"div", [{"style", "white-space: pre-wrap;"}], html}
+  defp maybe_preserve_whitespace(html, _), do: html
 
   defp split_lines(%{"insert" => string} = op) when is_binary(string) do
     line_end? = String.ends_with?(string, "\n")

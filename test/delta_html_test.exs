@@ -11,6 +11,11 @@ defmodule DeltaHtmlTest do
     assert to_html([%{"insert" => "word\n"}]) == "<p>word</p>"
   end
 
+  test "preserve whitespace" do
+    assert to_html([%{"insert" => "This    has    multiple    spaces\n"}], preserve_whitespace: true) ==
+             "<div style=\"white-space: pre-wrap;\"><p>This    has    multiple    spaces</p></div>"
+  end
+
   test "heading" do
     assert to_html([
              %{"insert" => "Heading"},
