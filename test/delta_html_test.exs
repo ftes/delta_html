@@ -79,6 +79,69 @@ defmodule DeltaHtmlTest do
              ~s(<p><a href="https://example.com" target="_blank">link</a></p>)
   end
 
+  test "link sanitization - allowed protocols" do
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "https://example.com"}, "insert" => "secure"},
+             %{"insert" => "\n"}
+           ]) ==
+             ~s(<p><a href="https://example.com" target="_blank">secure</a></p>)
+
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "http://example.com"}, "insert" => "insecure"},
+             %{"insert" => "\n"}
+           ]) ==
+             ~s(<p><a href="http://example.com" target="_blank">insecure</a></p>)
+
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "mailto:user@example.com"}, "insert" => "email"},
+             %{"insert" => "\n"}
+           ]) ==
+             ~s(<p><a href="mailto:user@example.com" target="_blank">email</a></p>)
+  end
+
+  test "link sanitization - blocked protocols" do
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "javascript:alert(1)"}, "insert" => "malicious"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>malicious</p>"
+
+    assert delta_to_html([
+             %{
+               "attributes" => %{"link" => "mailto://foo@bar.com?body=<script>alert('Powned')</script>"},
+               "insert" => "malicious"
+             },
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>malicious</p>"
+
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>malicious</p>"
+
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>malicious</p>"
+  end
+
+  test "link sanitization - malformed URLs" do
+    assert delta_to_html([
+             %{"attributes" => %{"link" => "not-a-url"}, "insert" => "text"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>text</p>"
+
+    assert delta_to_html([
+             %{"attributes" => %{"link" => ""}, "insert" => "text"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p>text</p>"
+  end
+
   test "numbered list" do
     assert delta_to_html([
              %{"insert" => "1"},

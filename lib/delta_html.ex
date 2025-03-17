@@ -162,7 +162,13 @@ defmodule DeltaHtml do
   end
 
   defp format_inline(%{"attributes" => %{"link" => href}} = op) do
-    {"a", [{"href", href}, {"target", "_blank"}], [op |> delete_attribute("link") |> format_inline()]}
+    case URI.new(href) do
+      {:ok, %URI{scheme: scheme}} when scheme in ~w(http https mailto) ->
+        {"a", [{"href", href}, {"target", "_blank"}], [op |> delete_attribute("link") |> format_inline()]}
+
+      _ ->
+        op |> delete_attribute("link") |> format_inline()
+    end
   end
 
   defp format_inline(%{"attributes" => %{"script" => "super"}} = op) do
