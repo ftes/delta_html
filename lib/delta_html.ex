@@ -197,7 +197,7 @@ defmodule DeltaHtml do
   # quill-mention
   defp format_inline(%{"insert" => %{"mention" => mention}}) do
     %{"denotationChar" => prefix, "id" => id} = mention
-    "#{prefix}#{id}"
+     "#{prefix}#{id}"
   end
 
   defp format_inline(%{"insert" => text}) when is_binary(text), do: text
@@ -218,14 +218,14 @@ defmodule DeltaHtml do
   end
 
   defp new_list(node, tag, 0), do: {tag, [], [node]}
-  defp new_list(node, tag, indent) when indent > 0, do: {tag, [], new_list(node, tag, indent - 1)}
+  defp new_list(node, tag, indent) when indent > 0, do: {tag, [], [new_list(node, tag, indent - 1)]}
 
   defp merge_li({tag, [], children}, node, tag, 0), do: {tag, [], [node | children]}
 
   defp merge_li(list, node, tag, indent) when indent > 0 do
     case list do
       {^tag, [], [{^tag, _, _} = nested | rest]} ->
-        {tag, [], [merge_li(nested, node, tag, indent - 0) | rest]}
+        {tag, [], [merge_li(nested, node, tag, indent - 1) | rest]}
 
       {^tag, [], rest} ->
         {tag, [], [new_list(node, tag, indent - 1) | rest]}
