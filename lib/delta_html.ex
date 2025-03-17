@@ -139,6 +139,11 @@ defmodule DeltaHtml do
     build_blocks(ops, [node | html], [])
   end
 
+  defp build_blocks([%{"insert" => "\n"}, %{"attributes" => %{"indent" => indent}} = indent_op | ops], html, line) do
+    node = {"p", [{"style", "padding-left: #{2 * indent}em;"}], line}
+    build_blocks([indent_op | ops], [node | html], [])
+  end
+
   defp build_blocks([%{"insert" => "\n"} | ops], html, line) do
     node = {"p", [], line}
     build_blocks(ops, [node | html], [])
