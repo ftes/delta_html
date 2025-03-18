@@ -11,8 +11,8 @@ defmodule DeltaHtml do
   "<p>word</p>"
 
   # With whitespace preservation
-  iex> DeltaHtml.to_html([%{"insert" => "word\\n"}], preserve_whitespace: true)
-  "<div style=\\"white-space: pre-wrap;\\"><p>word</p></div>"
+  iex> DeltaHtml.to_html([%{"insert" => "a   b\tc\\n"}], preserve_whitespace: true)
+  "<div style=\\"white-space: pre-wrap;\\"><p>a   b\tc\\n</p></div>"
   ```
 
   ## Supported features
