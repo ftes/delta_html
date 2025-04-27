@@ -30,7 +30,7 @@ defmodule DeltaHtml.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:floki, "~> 0.36.0"},
+      {:floki, "~> 0.37.0"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:styler, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
