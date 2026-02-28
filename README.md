@@ -36,6 +36,55 @@ iex> DeltaHtml.to_html(
 
 Note: this mode is intentionally not identical to Quill `getSemanticHTML()` for all attributes. Quill semantic output commonly uses inline styles for `align`/`direction`, while `quill_css: true` prefers classes for easier reuse of Quill theme CSS.
 
+## Migration Notes
+
+Recent releases changed a few HTML outputs to align behavior and improve safety.
+
+### Link Output and Sanitization
+
+- Links now include `rel="noopener noreferrer"` in addition to `target="_blank"`.
+- Allowed link protocols are `http`, `https`, `mailto`, `tel`, and `sms`.
+- Non-whitelisted or malformed links are preserved as links but sanitized to `href="about:blank"` (empty string still removes link wrapping).
+
+Before:
+
+```html
+<p>malicious</p>
+```
+
+After:
+
+```html
+<p><a href="about:blank" rel="noopener noreferrer" target="_blank">malicious</a></p>
+```
+
+### Empty Paragraph Rendering
+
+Empty lines now render as:
+
+```html
+<p></p>
+```
+
+instead of:
+
+```html
+<p><br/></p>
+```
+
+### Checklist List Items
+
+`checked` and `unchecked` list types are now supported and rendered with `data-list` attributes:
+
+```html
+<ul><li data-list="checked">todo</li></ul><ul><li data-list="unchecked">todo-2</li></ul>
+```
+
+### Quill Semantic Parity Notes
+
+- Default mode remains style-based for block attributes.
+- `quill_css: true` intentionally prefers classes (`ql-align-*`, `ql-direction-rtl`, `ql-indent-*`) even where Quill semantic HTML may emit inline styles for align/direction.
+
 ## Supported Features
 
 ### Inline

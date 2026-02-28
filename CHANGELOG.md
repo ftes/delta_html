@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Quill parity tests now require harness dependencies to be installed.
 - Documented that Styler runs as a `mix format` plugin.
 - Documented `quill_css` intentional non-parity with Quill semantic HTML for align/direction rendering (classes vs inline styles).
+- Link output now consistently includes `rel="noopener noreferrer"` with `target="_blank"`.
+- Link sanitization now allows `tel` and `sms`, and falls back to `about:blank` for malformed/non-whitelisted URLs (empty link values still remove link wrapping).
+- Empty paragraphs now render as `<p></p>` instead of `<p><br/></p>`.
+- Added checklist rendering support for `checked`/`unchecked` lists via `data-list` attributes.
 
 ### Fixed
 - Preserve inline attributes when splitting multi-line text inserts into per-line ops.
