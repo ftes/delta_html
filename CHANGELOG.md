@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Improved ExDoc configuration with guide grouping and source references for clearer hexdocs.pm output.
+- Tightened README opening paragraph so the HexDocs landing page states concrete workflow/value immediately.
 
 ## [0.5.0] - 2026-02-28
 ### Added
