@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.0] - 2026-02-28
 ### Added
 - `mix quill.setup` task to install and verify Quill harness dependencies.
 - Added `credo` and `dialyxir` tooling, with `mix precommit` checks for formatting, compile warnings, credo, dialyzer, and tests.
