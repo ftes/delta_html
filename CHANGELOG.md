@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added structured HexDocs guides (`docs/`) with grouped ExDoc navigation for getting started, rendering options, security policy, and Quill parity notes.
 - Added a concise "30 Seconds" quickstart section to README for first-time users.
+- Added explicit documentation of the Quill + Delta storage workflow (store Delta, rehydrate editor, render HTML for web/email output).
 
 ### Changed
 - Improved ExDoc configuration with guide grouping and source references for clearer hexdocs.pm output.

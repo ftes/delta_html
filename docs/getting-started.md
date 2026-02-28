@@ -26,6 +26,18 @@ You can pass:
 - a `%{"ops" => [...]}` map,
 - or a JSON-encoded Delta document.
 
+## Typical App Workflow (Quill + DeltaHtml)
+
+Use `DeltaHtml` as a rendering layer while keeping Delta as your stored format:
+
+1. User edits rich text in Quill on the frontend.
+2. Frontend sends Quill Delta JSON to backend.
+3. Backend stores Delta JSON (not pre-rendered HTML) in database.
+4. On next edit page load, backend sends Delta back and Quill rehydrates editor state.
+5. For display surfaces (web UI, email templates, exports), backend renders Delta to HTML with `DeltaHtml.to_html/2`.
+
+This pattern avoids dual-source drift (Delta + stale HTML) and keeps edit fidelity for future user changes.
+
 ## Common Options
 
 ```elixir

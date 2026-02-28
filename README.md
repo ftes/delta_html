@@ -27,6 +27,17 @@ DeltaHtml.to_html([
 # => "<p>Hello <strong>world</strong>!</p>"
 ```
 
+## What This Is Useful For
+
+Typical production workflow with Quill:
+
+1. Use Quill in your frontend edit form.
+2. Save only the Delta JSON in your backend/database.
+3. When user edits again, load that Delta back into Quill (rehydrate editor state).
+4. When rendering rich text (web UI, emails, PDFs), convert stored Delta to HTML with `DeltaHtml`.
+
+This keeps a single source of truth (Delta) while generating HTML only when you need to display content.
+
 ## Usage
 
 ```elixir
