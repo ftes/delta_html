@@ -45,6 +45,7 @@ Recent releases changed a few HTML outputs to align behavior and improve safety.
 - Links now include `rel="noopener noreferrer"` in addition to `target="_blank"`.
 - Allowed link protocols are `http`, `https`, `mailto`, `tel`, and `sms`.
 - Non-whitelisted or malformed links are preserved as links but sanitized to `href="about:blank"` (empty string still removes link wrapping).
+- You can opt into stricter behavior with `link_sanitization: :strict` (allows only `http`, `https`, `mailto` and drops unsafe links instead of using `about:blank`).
 
 Before:
 
@@ -56,6 +57,16 @@ After:
 
 ```html
 <p><a href="about:blank" rel="noopener noreferrer" target="_blank">malicious</a></p>
+```
+
+Strict mode:
+
+```elixir
+iex> DeltaHtml.to_html(
+...>   [%{"attributes" => %{"link" => "javascript:alert(1)"}, "insert" => "bad"}, %{"insert" => "\n"}],
+...>   link_sanitization: :strict
+...> )
+"<p>bad</p>"
 ```
 
 ### Empty Paragraph Rendering

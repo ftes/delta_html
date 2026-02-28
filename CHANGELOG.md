@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `credo` and `dialyxir` tooling, with `mix precommit` checks for formatting, compile warnings, credo, dialyzer, and tests.
 - CI now runs `credo` and `dialyzer`, with Dialyzer PLTs cached in `priv/plts`.
 - Expanded `quill_css` coverage tests for headers, blockquotes, and nested list items with alignment/direction classes.
+- Added `link_sanitization: :strict` option to allow only `http|https|mailto` and drop malformed/non-whitelisted links.
 
 ### Changed
 - Quill parity tests now require harness dependencies to be installed.
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Link sanitization now allows `tel` and `sms`, and falls back to `about:blank` for malformed/non-whitelisted URLs (empty link values still remove link wrapping).
 - Empty paragraphs now render as `<p></p>` instead of `<p><br/></p>`.
 - Added checklist rendering support for `checked`/`unchecked` lists via `data-list` attributes.
+- Documented final link policy: default remains Quill-compatible (`:quill`), with strict sanitization available via option.
 
 ### Fixed
 - Preserve inline attributes when splitting multi-line text inserts into per-line ops.

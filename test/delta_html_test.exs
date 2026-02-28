@@ -188,6 +188,62 @@ defmodule DeltaHtmlTest do
              "<p>text</p>"
   end
 
+  test "strict link sanitization allows only http/https/mailto and drops unsafe links" do
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "https://example.com"}, "insert" => "secure"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             ~s(<p><a href="https://example.com" rel="noopener noreferrer" target="_blank">secure</a></p>)
+
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "mailto:user@example.com"}, "insert" => "email"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             ~s(<p><a href="mailto:user@example.com" rel="noopener noreferrer" target="_blank">email</a></p>)
+
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "tel:+15551234567"}, "insert" => "tel"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             "<p>tel</p>"
+
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "sms:+15551234567"}, "insert" => "sms"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             "<p>sms</p>"
+
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "javascript:alert(1)"}, "insert" => "bad"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             "<p>bad</p>"
+
+    assert to_html(
+             [
+               %{"attributes" => %{"link" => "not-a-url"}, "insert" => "bad"},
+               %{"insert" => "\n"}
+             ],
+             link_sanitization: :strict
+           ) ==
+             "<p>bad</p>"
+  end
+
   test "link attribute values are escaped to prevent quote injection" do
     html =
       to_html([

@@ -6,7 +6,8 @@ defmodule DeltaHtml do
   See the [README](readme.html) for usage, feature support, and alternatives.
   """
 
-  @link_protocol_whitelist ~w(http https mailto tel sms)
+  @quill_link_protocol_whitelist ~w(http https mailto tel sms)
+  @strict_link_protocol_whitelist ~w(http https mailto)
   @sanitized_link "about:blank"
 
   @doc """
@@ -16,6 +17,9 @@ defmodule DeltaHtml do
     * `:preserve_whitespace` - When true, wraps the output in a div with white-space: pre-wrap to preserve whitespace. Defaults to false.
     * `:quill_css` - When true, emits Quill-style classes (for example `ql-align-*`, `ql-direction-rtl`, `ql-indent-*`) instead of inline block styles.
       Defaults to false.
+    * `:link_sanitization` - Link sanitization policy:
+      * `:quill` (default) - Allows `http`, `https`, `mailto`, `tel`, and `sms`. Non-whitelisted or malformed links fallback to `about:blank`.
+      * `:strict` - Allows only `http`, `https`, and `mailto`. Non-whitelisted or malformed links are removed.
 
   ## Examples
       iex> to_html([%{"insert" => "word\\n"}])
@@ -64,13 +68,13 @@ defmodule DeltaHtml do
   defp build_blocks([], _opts, html, line), do: reverse([{"p", [], line} | html])
 
   defp build_blocks([%{"line_end?" => false} = op | ops], opts, html, line) do
-    node = format_inline(op)
+    node = format_inline(op, opts)
     line = if node == "", do: line, else: [node | line]
     build_blocks(ops, opts, html, line)
   end
 
   defp build_blocks([%{"insert" => text} = op | ops], opts, html, line) when text != "\n" do
-    node = {"p", [], [op |> Map.put("insert", String.trim_trailing(text, "\n")) |> format_inline() | line]}
+    node = {"p", [], [op |> Map.put("insert", String.trim_trailing(text, "\n")) |> format_inline(opts) | line]}
     build_blocks(ops, opts, [node | html], [])
   end
 
@@ -116,24 +120,25 @@ defmodule DeltaHtml do
   for {attr, tag} <- [underline: "u", italic: "em", bold: "strong", strike: "s", code: "code"] do
     attr = to_string(attr)
 
-    defp format_inline(%{"attributes" => %{unquote(attr) => true}} = op) do
-      {unquote(tag), [], [op |> delete_attribute(unquote(attr)) |> format_inline()]}
+    defp format_inline(%{"attributes" => %{unquote(attr) => true}} = op, opts) do
+      {unquote(tag), [], [op |> delete_attribute(unquote(attr)) |> format_inline(opts)]}
     end
   end
 
   for {attr, style} <- [color: "color", background: "background-color"] do
     attr = to_string(attr)
 
-    defp format_inline(%{"attributes" => %{unquote(attr) => value}} = op) do
-      {"span", [{"style", "#{unquote(style)}: #{value};"}], [op |> delete_attribute(unquote(attr)) |> format_inline()]}
+    defp format_inline(%{"attributes" => %{unquote(attr) => value}} = op, opts) do
+      {"span", [{"style", "#{unquote(style)}: #{value};"}],
+       [op |> delete_attribute(unquote(attr)) |> format_inline(opts)]}
     end
   end
 
-  defp format_inline(%{"attributes" => %{"font" => family}} = op) when family in ~w(monospace serif) do
-    {"span", [{"style", "font-family: #{family};"}], [op |> delete_attribute("font") |> format_inline()]}
+  defp format_inline(%{"attributes" => %{"font" => family}} = op, opts) when family in ~w(monospace serif) do
+    {"span", [{"style", "font-family: #{family};"}], [op |> delete_attribute("font") |> format_inline(opts)]}
   end
 
-  defp format_inline(%{"attributes" => %{"size" => size}} = op) when size in ~w(small large huge) do
+  defp format_inline(%{"attributes" => %{"size" => size}} = op, opts) when size in ~w(small large huge) do
     scale =
       case size do
         "small" -> 0.75
@@ -141,37 +146,37 @@ defmodule DeltaHtml do
         "huge" -> 2.5
       end
 
-    {"span", [{"style", "font-size: #{scale}em;"}], [op |> delete_attribute("size") |> format_inline()]}
+    {"span", [{"style", "font-size: #{scale}em;"}], [op |> delete_attribute("size") |> format_inline(opts)]}
   end
 
-  defp format_inline(%{"attributes" => %{"link" => href}} = op) do
-    case sanitize_link(href) do
+  defp format_inline(%{"attributes" => %{"link" => href}} = op, opts) do
+    case sanitize_link(href, opts) do
       nil ->
-        op |> delete_attribute("link") |> format_inline()
+        op |> delete_attribute("link") |> format_inline(opts)
 
       sanitized_href ->
         {"a", [{"href", sanitized_href}, {"rel", "noopener noreferrer"}, {"target", "_blank"}],
-         [op |> delete_attribute("link") |> format_inline()]}
+         [op |> delete_attribute("link") |> format_inline(opts)]}
     end
   end
 
-  defp format_inline(%{"attributes" => %{"script" => "super"}} = op) do
-    {"sup", [], [op |> delete_attribute("script") |> format_inline()]}
+  defp format_inline(%{"attributes" => %{"script" => "super"}} = op, opts) do
+    {"sup", [], [op |> delete_attribute("script") |> format_inline(opts)]}
   end
 
-  defp format_inline(%{"attributes" => %{"script" => "sub"}} = op) do
-    {"sub", [], [op |> delete_attribute("script") |> format_inline()]}
+  defp format_inline(%{"attributes" => %{"script" => "sub"}} = op, opts) do
+    {"sub", [], [op |> delete_attribute("script") |> format_inline(opts)]}
   end
 
   # quill-mention
-  defp format_inline(%{"insert" => %{"mention" => mention}}) do
+  defp format_inline(%{"insert" => %{"mention" => mention}}, _opts) do
     %{"denotationChar" => prefix, "id" => id} = mention
     "#{prefix}#{id}"
   end
 
-  defp format_inline(%{"insert" => %{} = _unsupported_embed}), do: ""
-  defp format_inline(%{"insert" => text}) when is_binary(text), do: text
-  defp format_inline(%{"insert" => _unsupported}), do: ""
+  defp format_inline(%{"insert" => %{} = _unsupported_embed}, _opts), do: ""
+  defp format_inline(%{"insert" => text}, _opts) when is_binary(text), do: text
+  defp format_inline(%{"insert" => _unsupported}, _opts), do: ""
 
   defp delete_attribute(op, key) do
     case Map.delete(op["attributes"], key) do
@@ -180,23 +185,32 @@ defmodule DeltaHtml do
     end
   end
 
-  defp sanitize_link(""), do: nil
+  defp sanitize_link("", _opts), do: nil
 
-  defp sanitize_link(href) when is_binary(href) do
+  defp sanitize_link(href, opts) when is_binary(href) do
+    %{protocols: protocols, fallback: fallback} = link_policy(opts)
+
     case Regex.run(~r/^([A-Za-z][A-Za-z0-9+.-]*):/, href) do
       [_, scheme] ->
-        if String.downcase(scheme) in @link_protocol_whitelist do
+        if String.downcase(scheme) in protocols do
           href
         else
-          @sanitized_link
+          fallback
         end
 
       _ ->
-        @sanitized_link
+        fallback
     end
   end
 
-  defp sanitize_link(_), do: @sanitized_link
+  defp sanitize_link(_href, opts), do: link_policy(opts).fallback
+
+  defp link_policy(opts) do
+    case opts[:link_sanitization] do
+      :strict -> %{protocols: @strict_link_protocol_whitelist, fallback: nil}
+      _ -> %{protocols: @quill_link_protocol_whitelist, fallback: @sanitized_link}
+    end
+  end
 
   defp line_attrs(attrs, opts) do
     if opts[:quill_css] do
