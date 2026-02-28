@@ -26,3 +26,4 @@ delta_html-*.tar
 
 tmp*
 quill_harness/node_modules/
+priv/plts/

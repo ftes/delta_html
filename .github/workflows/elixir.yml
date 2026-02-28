@@ -38,7 +38,26 @@ jobs:
         run: mix quill.setup
       - name: Check Formatting
         run: mix format --check-formatted
+      - name: Run Credo
+        run: mix credo --strict
       - name: Compiles without warnings
         run: mix compile --warnings-as-errors
       - name: Run tests
         run: "mix test --warnings-as-errors"
+      - name: Restore PLT cache
+        id: plt-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-mix-test-plts-${{ hashFiles('mix.lock', '.tool-versions') }}
+      - name: Create PLTs
+        if: steps.plt-cache.outputs.cache-hit != 'true'
+        run: mix dialyzer --plt
+      - name: Save PLT cache
+        if: steps.plt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: priv/plts
+          key: ${{ steps.plt-cache.outputs.cache-primary-key }}
+      - name: Run Dialyzer
+        run: mix dialyzer

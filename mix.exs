@@ -14,6 +14,7 @@ defmodule DeltaHtml.MixProject do
       description: @description,
       package: package(),
       deps: deps(),
+      dialyzer: dialyzer(),
       name: "DeltaHtml",
       source_url: @source_url,
       docs: docs(),
@@ -28,12 +29,27 @@ defmodule DeltaHtml.MixProject do
     ]
   end
 
+  def cli do
+    [
+      preferred_envs: [precommit: :test, credo: :test, dialyzer: :test]
+    ]
+  end
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
       {:lazy_html, "~> 0.1.10"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
-      {:styler, "~> 1.4", only: [:dev, :test], runtime: false}
+      {:styler, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp dialyzer do
+    [
+      plt_add_apps: [:mix],
+      plt_file: {:no_warn, "priv/plts/project.plt"}
     ]
   end
 
@@ -57,6 +73,13 @@ defmodule DeltaHtml.MixProject do
 
   defp aliases do
     [
+      precommit: [
+        "format --check-formatted",
+        "compile --warnings-as-errors",
+        "credo --strict",
+        "dialyzer",
+        "test --warnings-as-errors"
+      ],
       test: ["quill.setup --check", "test"]
     ]
   end

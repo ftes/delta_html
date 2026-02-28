@@ -81,3 +81,18 @@ The repository includes a JS harness under `quill_harness/` that renders Delta w
 mix quill.setup
 mix test
 ```
+
+## Development Checks
+
+```bash
+mix precommit
+```
+
+`mix precommit` runs:
+- `mix format --check-formatted`
+- `mix compile --warnings-as-errors`
+- `mix credo --strict`
+- `mix dialyzer`
+- `mix test --warnings-as-errors`
+
+Styler is configured as a formatter plugin and runs through `mix format` (not as a standalone Mix task).

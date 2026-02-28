@@ -159,7 +159,7 @@ defmodule DeltaHtmlTest do
              },
              %{"insert" => "\n"}
            ]) ==
-             "<p><a href=\"mailto://foo@bar.com?body=&lt;script&gt;alert(&#39;Powned&#39;)&lt;/script&gt;\" rel=\"noopener noreferrer\" target=\"_blank\">malicious</a></p>"
+             ~s{<p><a href="mailto://foo@bar.com?body=&lt;script&gt;alert(&#39;Powned&#39;)&lt;/script&gt;" rel="noopener noreferrer" target="_blank">malicious</a></p>}
 
     assert to_html([
              %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
@@ -504,18 +504,24 @@ defmodule DeltaHtmlTest do
   end
 
   test "quill_css mode uses classes for block attributes" do
-    assert to_html([
-             %{"insert" => "x"},
-             %{"attributes" => %{"align" => "center", "direction" => "rtl", "indent" => 2}, "insert" => "\n"}
-           ], quill_css: true) ==
+    assert to_html(
+             [
+               %{"insert" => "x"},
+               %{"attributes" => %{"align" => "center", "direction" => "rtl", "indent" => 2}, "insert" => "\n"}
+             ],
+             quill_css: true
+           ) ==
              ~s(<p class="ql-align-center ql-direction-rtl ql-indent-2">x</p>)
   end
 
   test "quill_css mode uses list item classes when present" do
-    assert to_html([
-             %{"insert" => "rtl item"},
-             %{"attributes" => %{"align" => "right", "direction" => "rtl", "list" => "checked"}, "insert" => "\n"}
-           ], quill_css: true) ==
+    assert to_html(
+             [
+               %{"insert" => "rtl item"},
+               %{"attributes" => %{"align" => "right", "direction" => "rtl", "list" => "checked"}, "insert" => "\n"}
+             ],
+             quill_css: true
+           ) ==
              ~s(<ul><li class="ql-align-right ql-direction-rtl" data-list="checked">rtl item</li></ul>)
   end
 end

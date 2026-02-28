@@ -191,7 +191,8 @@ defmodule DeltaHtml do
           @sanitized_link
         end
 
-      _ -> @sanitized_link
+      _ ->
+        @sanitized_link
     end
   end
 
