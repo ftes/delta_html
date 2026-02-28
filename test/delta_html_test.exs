@@ -4,7 +4,7 @@ defmodule DeltaHtmlTest do
   import DeltaHtml
 
   test "empty input" do
-    assert to_html([%{"insert" => "\n"}]) == "<p><br/></p>"
+    assert to_html([%{"insert" => "\n"}]) == "<p></p>"
   end
 
   test "single word" do
@@ -28,7 +28,7 @@ defmodule DeltaHtmlTest do
              %{"insert" => %{"image" => "https://example.com/a.png"}},
              %{"insert" => "\n"}
            ]) ==
-             "<p><br/></p>"
+             "<p></p>"
   end
 
   test "unsupported embed in a text line is skipped" do
@@ -110,7 +110,7 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"link" => "https://example.com"}, "insert" => "link"},
              %{"insert" => "\n"}
            ]) ==
-             ~s(<p><a href="https://example.com" target="_blank">link</a></p>)
+             ~s(<p><a href="https://example.com" rel="noopener noreferrer" target="_blank">link</a></p>)
   end
 
   test "link sanitization - allowed protocols" do
@@ -118,19 +118,31 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"link" => "https://example.com"}, "insert" => "secure"},
              %{"insert" => "\n"}
            ]) ==
-             ~s(<p><a href="https://example.com" target="_blank">secure</a></p>)
+             ~s(<p><a href="https://example.com" rel="noopener noreferrer" target="_blank">secure</a></p>)
 
     assert to_html([
              %{"attributes" => %{"link" => "http://example.com"}, "insert" => "insecure"},
              %{"insert" => "\n"}
            ]) ==
-             ~s(<p><a href="http://example.com" target="_blank">insecure</a></p>)
+             ~s(<p><a href="http://example.com" rel="noopener noreferrer" target="_blank">insecure</a></p>)
 
     assert to_html([
              %{"attributes" => %{"link" => "mailto:user@example.com"}, "insert" => "email"},
              %{"insert" => "\n"}
            ]) ==
-             ~s(<p><a href="mailto:user@example.com" target="_blank">email</a></p>)
+             ~s(<p><a href="mailto:user@example.com" rel="noopener noreferrer" target="_blank">email</a></p>)
+
+    assert to_html([
+             %{"attributes" => %{"link" => "tel:+15551234567"}, "insert" => "tel"},
+             %{"insert" => "\n"}
+           ]) ==
+             ~s(<p><a href="tel:+15551234567" rel="noopener noreferrer" target="_blank">tel</a></p>)
+
+    assert to_html([
+             %{"attributes" => %{"link" => "sms:+15551234567"}, "insert" => "sms"},
+             %{"insert" => "\n"}
+           ]) ==
+             ~s(<p><a href="sms:+15551234567" rel="noopener noreferrer" target="_blank">sms</a></p>)
   end
 
   test "link sanitization - blocked protocols" do
@@ -138,7 +150,7 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"link" => "javascript:alert(1)"}, "insert" => "malicious"},
              %{"insert" => "\n"}
            ]) ==
-             "<p>malicious</p>"
+             ~s(<p><a href="about:blank" rel="noopener noreferrer" target="_blank">malicious</a></p>)
 
     assert to_html([
              %{
@@ -147,19 +159,19 @@ defmodule DeltaHtmlTest do
              },
              %{"insert" => "\n"}
            ]) ==
-             "<p>malicious</p>"
+             "<p><a href=\"mailto://foo@bar.com?body=&lt;script&gt;alert(&#39;Powned&#39;)&lt;/script&gt;\" rel=\"noopener noreferrer\" target=\"_blank\">malicious</a></p>"
 
     assert to_html([
              %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
              %{"insert" => "\n"}
            ]) ==
-             "<p>malicious</p>"
+             ~s(<p><a href="about:blank" rel="noopener noreferrer" target="_blank">malicious</a></p>)
 
     assert to_html([
-             %{"attributes" => %{"link" => "data:text/html,<script>alert(1)</script>"}, "insert" => "malicious"},
+             %{"attributes" => %{"link" => "about:blank"}, "insert" => "safe-ish"},
              %{"insert" => "\n"}
            ]) ==
-             "<p>malicious</p>"
+             ~s(<p><a href="about:blank" rel="noopener noreferrer" target="_blank">safe-ish</a></p>)
   end
 
   test "link sanitization - malformed URLs" do
@@ -167,13 +179,60 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"link" => "not-a-url"}, "insert" => "text"},
              %{"insert" => "\n"}
            ]) ==
-             "<p>text</p>"
+             ~s(<p><a href="about:blank" rel="noopener noreferrer" target="_blank">text</a></p>)
 
     assert to_html([
              %{"attributes" => %{"link" => ""}, "insert" => "text"},
              %{"insert" => "\n"}
            ]) ==
              "<p>text</p>"
+  end
+
+  test "link attribute values are escaped to prevent quote injection" do
+    html =
+      to_html([
+        %{"attributes" => %{"link" => "https://example.com\" onclick=\"alert(1)"}, "insert" => "Link"},
+        %{"insert" => "\n"}
+      ])
+
+    assert html =~ "href=\"https://example.com&quot; onclick=&quot;alert(1)\""
+    refute html =~ "\" onclick=\""
+  end
+
+  test "link attribute values escape angle brackets and ampersands" do
+    html =
+      to_html([
+        %{"attributes" => %{"link" => "https://example.com?val=<test>&a=1&b=2"}, "insert" => "Link"},
+        %{"insert" => "\n"}
+      ])
+
+    assert html =~ "href=\"https://example.com?val=&lt;test&gt;&amp;a=1&amp;b=2\""
+    refute html =~ "href=\"https://example.com?val=<test>&a=1&b=2\""
+  end
+
+  test "malicious formula embed payload is dropped" do
+    assert to_html([
+             %{"insert" => %{"formula" => "</span><img src=x onerror=alert(1)>"}},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p></p>"
+  end
+
+  test "malicious video embed payload in text line is dropped" do
+    assert to_html([
+             %{"insert" => "A"},
+             %{"insert" => %{"video" => "\"><script>alert(1)</script><a href=\""}},
+             %{"insert" => "B\n"}
+           ]) ==
+             "<p>AB</p>"
+  end
+
+  test "malicious image embed payload is dropped" do
+    assert to_html([
+             %{"insert" => %{"image" => "x\" onerror=\"alert(1)"}},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p></p>"
   end
 
   test "numbered list" do
@@ -211,7 +270,17 @@ defmodule DeltaHtmlTest do
              %{"insert" => "rtl item"},
              %{"attributes" => %{"align" => "right", "direction" => "rtl", "list" => "bullet"}, "insert" => "\n"}
            ]) ==
-             ~s(<ul><li style="text-align: right; direction: rtl;">rtl item</li></ul>)
+             "<ul><li>rtl item</li></ul>"
+  end
+
+  test "checklist list items" do
+    assert to_html([
+             %{"insert" => "todo"},
+             %{"attributes" => %{"list" => "checked"}, "insert" => "\n"},
+             %{"insert" => "todo-2"},
+             %{"attributes" => %{"list" => "unchecked"}, "insert" => "\n"}
+           ]) ==
+             ~s(<ul><li data-list="checked">todo</li></ul><ul><li data-list="unchecked">todo-2</li></ul>)
   end
 
   test "deeply nested lists" do
@@ -432,5 +501,21 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"indent" => 1}, "insert" => "\n\n"}
            ]) ==
              ~s(<p style="padding-left: 2em;"><span style="font-size: 1.5em;">+department</span></p><p style="padding-left: 2em;"></p>)
+  end
+
+  test "quill_css mode uses classes for block attributes" do
+    assert to_html([
+             %{"insert" => "x"},
+             %{"attributes" => %{"align" => "center", "direction" => "rtl", "indent" => 2}, "insert" => "\n"}
+           ], quill_css: true) ==
+             ~s(<p class="ql-align-center ql-direction-rtl ql-indent-2">x</p>)
+  end
+
+  test "quill_css mode uses list item classes when present" do
+    assert to_html([
+             %{"insert" => "rtl item"},
+             %{"attributes" => %{"align" => "right", "direction" => "rtl", "list" => "checked"}, "insert" => "\n"}
+           ], quill_css: true) ==
+             ~s(<ul><li class="ql-align-right ql-direction-rtl" data-list="checked">rtl item</li></ul>)
   end
 end
