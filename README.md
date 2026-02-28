@@ -12,6 +12,21 @@ Render rich text entered by non technical users for web pages or emails.
 **Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
 HexDocs includes a dedicated `GUIDES` section (Getting Started, Rendering Options, Security Policy, and Quill Parity Notes).
 
+## 30 Seconds
+
+```elixir
+# 1) Add dependency
+# {:delta_html, "~> 0.5"}
+
+# 2) Convert Quill Delta to HTML
+DeltaHtml.to_html([
+  %{"insert" => "Hello "},
+  %{"attributes" => %{"bold" => true}, "insert" => "world"},
+  %{"insert" => "!\n"}
+])
+# => "<p>Hello <strong>world</strong>!</p>"
+```
+
 ## Usage
 
 ```elixir
