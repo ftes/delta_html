@@ -32,15 +32,13 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: quill_harness/package-lock.json
-      - name: Install Quill harness dependencies
-        run: npm ci --prefix quill_harness
       - name: Install dependencies
         run: mix deps.get
+      - name: Setup Quill harness
+        run: mix quill.setup
       - name: Check Formatting
         run: mix format --check-formatted
       - name: Compiles without warnings
         run: mix compile --warnings-as-errors
       - name: Run tests
         run: "mix test --warnings-as-errors"
-        env:
-          REQUIRE_QUILL_HARNESS: "1"

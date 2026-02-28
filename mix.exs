@@ -16,7 +16,8 @@ defmodule DeltaHtml.MixProject do
       deps: deps(),
       name: "DeltaHtml",
       source_url: @source_url,
-      docs: docs()
+      docs: docs(),
+      aliases: aliases()
     ]
   end
 
@@ -30,7 +31,7 @@ defmodule DeltaHtml.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:floki, "~> 0.37.0"},
+      {:lazy_html, "~> 0.1.10"},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:styler, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
@@ -46,10 +47,17 @@ defmodule DeltaHtml.MixProject do
 
   defp docs do
     [
-      main: "DeltaHtml",
+      main: "readme",
       extras: [
+        "README.md": [title: "Overview"],
         "CHANGELOG.md": [title: "Changelog"]
       ]
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["quill.setup --check", "test"]
     ]
   end
 end

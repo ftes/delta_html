@@ -6,14 +6,9 @@ defmodule DeltaHtmlQuillParityTest do
   @moduletag :quill
   @harness_status DeltaHtml.QuillHarness.available?()
 
-  if match?({:error, _}, @harness_status) and System.get_env("REQUIRE_QUILL_HARNESS") in ["1", "true", "TRUE"] do
+  if match?({:error, _}, @harness_status) do
     {:error, reason} = @harness_status
-    raise "Quill harness is required but unavailable: #{reason}"
-  end
-
-  if match?({:error, _}, @harness_status) and System.get_env("REQUIRE_QUILL_HARNESS") not in ["1", "true", "TRUE"] do
-    {:error, reason} = @harness_status
-    @moduletag skip: "Quill harness unavailable: #{reason}"
+    raise "Quill harness unavailable: #{reason}. Run `mix quill.setup`."
   end
 
   @semantic_cases [
@@ -121,8 +116,8 @@ defmodule DeltaHtmlQuillParityTest do
 
   defp canonical_html(html) do
     html
-    |> Floki.parse_fragment!()
-    |> Floki.raw_html()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.to_html()
     |> String.replace("\u00A0", " ")
   end
 end

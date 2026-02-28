@@ -11,17 +11,73 @@ Render rich text entered by non technical users for web pages or emails.
 
 **Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
 
+## Usage
+
+```elixir
+iex> DeltaHtml.to_html([%{"insert" => "word\n"}])
+"<p>word</p>"
+
+# With whitespace preservation
+iex> DeltaHtml.to_html([%{"insert" => "a   b\tc\n"}], preserve_whitespace: true)
+"<div style=\"white-space: pre-wrap;\"><p>a   b\tc\n</p></div>"
+```
+
+## Supported Features
+
+### Inline
+
+- ✅ Background Color - background
+- ✅ Bold - bold
+- ✅ Color - color
+- ✅ Font - font (only `serif` and `monospace`)
+- ✅ Inline Code - code
+- ✅ Italic - italic
+- ✅ Link - link
+- ✅ Size - size (only `small`, `large`, and `huge`)
+- ✅ Strikethrough - strike
+- ✅ Superscript/Subscript - script
+- ✅ Underline - underline
+
+### Block
+
+- ✅ Blockquote - blockquote
+- ✅ Header - header
+- ✅ Indent - indent
+- ✅ List - list
+- ✅ Text Alignment - align
+- ✅ Text Direction - direction
+- ❌ Code Block - code-block
+- ❌ Formula - formula (requires KaTeX)
+- ❌ Image - image
+- ❌ Video - video
+
+### Plugins
+
+- ✅ quill-mention - output as `#{denotation_char}#{id}`, e.g. `+name`
+
+## Extensibility
+
+There are currently no extension points for additional formats or plugins.
+The implementation is a fairly short single file, so copying and adapting it is straightforward.
+
+## Alternatives
+
+- Convert in browser
+  - [`quill.getSemanticHTML(0)`](https://quilljs.com/docs/api#getsemantichtml)
+  - Con: Need to store Delta and HTML.
+  - Con: Need to sanitize HTML on server.
+  - Con: Less control over output (separate transform pass on server?), especially for plugins like [quill-mention](https://github.com/quill-mention/quill-mention).
+- NIF
+  - Rust: [quill-core-rs](https://github.com/mundo-68/quill-core-rs) (untested)
+- Markdown instead of Delta/Quill
+  - WYSIWYG editor, e.g. [milkdown](https://milkdown.dev/)
+  - HTML conversion: [earmark](https://hexdocs.pm/earmark)
+
 ## Quill Parity Harness
 
 The repository includes a JS harness under `quill_harness/` that renders Delta with Quill 2 (`getSemanticHTML`) and feeds parity checks in Elixir tests.
 
 ```bash
-npm ci --prefix quill_harness
-mix test --include quill
-```
-
-To require the harness (fail instead of skip when Node/deps are missing):
-
-```bash
-REQUIRE_QUILL_HARNESS=1 mix test --include quill
+mix quill.setup
+mix test
 ```
