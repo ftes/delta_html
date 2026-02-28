@@ -12,7 +12,7 @@ Render rich text entered by non technical users for web pages or emails.
 **Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
 HexDocs includes a dedicated `GUIDES` section (Getting Started, Rendering Options, Security Policy, and Quill Parity Notes).
 
-## 30 Seconds
+## 30-Second Start
 
 ```elixir
 # 1) Add dependency
