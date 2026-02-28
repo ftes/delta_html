@@ -2,63 +2,8 @@ defmodule DeltaHtml do
   @moduledoc """
   Convert Quill (Slab) [Delta](https://quilljs.com/docs/delta) document format to HTML.
 
-  This is useful to display rich text entered by users in your web UI or emails.
-  It sanitizes input (prevents malicious HTML) and allows you to store only the document model (delta) and not also the HTML.
-
-  ## Usage
-  ```
-  iex> DeltaHtml.to_html([%{"insert" => "word\\n"}])
-  "<p>word</p>"
-
-  # With whitespace preservation
-  iex> DeltaHtml.to_html([%{"insert" => "a   b\tc\\n"}], preserve_whitespace: true)
-  "<div style=\\"white-space: pre-wrap;\\"><p>a   b\tc\\n</p></div>"
-  ```
-
-  ## Supported features
-  ### Inline
-  - ✅ Background Color - background
-  - ✅ Bold - bold
-  - ✅ Color - color
-  - ✅ Font - font (only 'serif' and 'monospace')
-  - ✅ Inline Code - code
-  - ✅ Italic - italic
-  - ✅ Link - link
-  - ✅ Size - size (only 'small', 'large', and 'huge')
-  - ✅ Strikethrough - strike
-  - ✅ Superscript/Subscript - script
-  - ✅ Underline - underline
-
-  ### Block
-  - ✅ Blockquote - blockquote
-  - ✅ Header - header
-  - ✅ Indent - indent
-  - ✅ List - list
-  - ✅ Text Alignment - align
-  - ✅ Text Direction - direction
-  - ❌ Code Block - code-block
-  - ❌ Formula - formula (requires KaTeX)
-  - ❌ Image - image
-  - ❌ Video - video
-
-  ### Plugins
-  - ✅ quill-mention - output as `\#{denotation_char}\#{id}`, e.g. `+name`
-
-  ## Extensibility
-  Currently there are no extensions points e.g. to support further formats or plugins.
-  It's a fairly short single file, so just copy and paste.
-
-  ## Alternatives
-  - Convert in browser
-    - [`quill.getSemanticHTML(0)`](https://quilljs.com/docs/api#getsemantichtml)
-    - Con: Need to store Delta and HTML.
-    - Con: Need to sanitize HTML on server.
-    - Con: Less control over output (separate transform pass on server?), especially for plugins like [quill-mention](https://github.com/quill-mention/quill-mention).
-  - NIF
-    - Rust: [quill-core-rs](https://github.com/mundo-68/quill-core-rs) (untested)
-  - Markdown instead of Delta/Quill
-    - WYSIWYG editor, e.g. [milkdown](https://milkdown.dev/)
-    - HTML conversion: [earmark](https://hexdocs.pm/earmark)
+  Use `to_html/2` to render rich text for web pages and emails.
+  See the [README](readme.html) for usage, feature support, and alternatives.
   """
 
   @doc """
@@ -80,14 +25,15 @@ defmodule DeltaHtml do
     |> Enum.flat_map(&split_lines/1)
     |> build_blocks()
     |> maybe_preserve_whitespace(opts[:preserve_whitespace])
-    |> Floki.raw_html()
+    |> LazyHTML.from_tree()
+    |> LazyHTML.to_html()
   end
 
   defp ops(json) when is_binary(json), do: json |> JSON.decode!() |> ops()
   defp ops(%{"ops" => ops}), do: ops(ops)
   defp ops(ops) when is_list(ops), do: ops
 
-  defp maybe_preserve_whitespace(html, true), do: {"div", [{"style", "white-space: pre-wrap;"}], html}
+  defp maybe_preserve_whitespace(html, true), do: [{"div", [{"style", "white-space: pre-wrap;"}], html}]
   defp maybe_preserve_whitespace(html, _), do: html
 
   defp split_lines(%{"insert" => string} = op) when is_binary(string) do
