@@ -23,3 +23,6 @@ delta_html-*.tar
 /tmp/
 
 .DS_STORE
+
+tmp*
+quill_harness/node_modules/

@@ -93,14 +93,15 @@ defmodule DeltaHtml do
   defp split_lines(%{"insert" => string} = op) when is_binary(string) do
     line_end? = String.ends_with?(string, "\n")
     lines = string |> String.slice(0..if(line_end?, do: -2, else: -1)//1) |> String.split("\n")
+    line_count = length(lines)
 
     lines
     |> Enum.with_index(1)
     |> Enum.map(fn {line, index} ->
-      if index == length(lines) do
+      if index == line_count do
         Map.merge(op, %{"insert" => "#{line}#{if line_end?, do: "\n"}", "line_end?" => line_end?})
       else
-        %{"insert" => "#{line}\n", "line_end?" => true}
+        Map.merge(op, %{"insert" => "#{line}\n", "line_end?" => true})
       end
     end)
   end
@@ -109,47 +110,44 @@ defmodule DeltaHtml do
 
   defp build_blocks(ops, html_acc \\ [], line_acc \\ [])
   defp build_blocks([], html, []), do: reverse(html)
+  defp build_blocks([], html, line), do: reverse([{"p", [], line} | html])
 
   defp build_blocks([%{"line_end?" => false} = op | ops], html, line) do
     node = format_inline(op)
-    build_blocks(ops, html, [node | line])
+    line = if node == "", do: line, else: [node | line]
+    build_blocks(ops, html, line)
   end
 
-  defp build_blocks([%{"insert" => text} | ops], html, line) when text != "\n" do
-    node = {"p", [], [String.trim_trailing(text, "\n") | line]}
+  defp build_blocks([%{"insert" => text} = op | ops], html, line) when text != "\n" do
+    node = {"p", [], [op |> Map.put("insert", String.trim_trailing(text, "\n")) |> format_inline() | line]}
     build_blocks(ops, [node | html], [])
   end
 
   # Blocks
-  defp build_blocks([%{"attributes" => %{"header" => level}} | ops], html, line) do
-    node = {"h#{level}", [], line}
+  defp build_blocks([%{"attributes" => %{"header" => level} = attrs} | ops], html, line) do
+    node = {"h#{level}", line_attrs(attrs), line}
     build_blocks(ops, [node | html], [])
   end
 
-  defp build_blocks([%{"attributes" => %{"blockquote" => true}} | ops], html, line) do
-    node = {"blockquote", [], line}
+  defp build_blocks([%{"attributes" => %{"blockquote" => true} = attrs} | ops], html, line) do
+    node = {"blockquote", line_attrs(attrs), line}
     build_blocks(ops, [node | html], [])
   end
 
   defp build_blocks([%{"attributes" => %{"list" => "ordered"} = attrs} | ops], html, line) do
-    node = {"li", [], line}
+    node = {"li", list_item_attrs(attrs), line}
     html = add_li(html, node, "ol", attrs["indent"] || 0)
     build_blocks(ops, html, [])
   end
 
   defp build_blocks([%{"attributes" => %{"list" => "bullet"} = attrs} | ops], html, line) do
-    node = {"li", [], line}
+    node = {"li", list_item_attrs(attrs), line}
     html = add_li(html, node, "ul", attrs["indent"] || 0)
     build_blocks(ops, html, [])
   end
 
-  defp build_blocks([%{"attributes" => %{"align" => align}} | ops], html, line) do
-    node = {"p", [{"style", "text-align: #{align};"}], line}
-    build_blocks(ops, [node | html], [])
-  end
-
-  defp build_blocks([%{"attributes" => %{"indent" => indent}} | ops], html, line) do
-    node = {"p", [{"style", "padding-left: #{2 * indent}em;"}], line}
+  defp build_blocks([%{"attributes" => attrs} | ops], html, line) do
+    node = {"p", line_attrs(attrs), line}
     build_blocks(ops, [node | html], [])
   end
 
@@ -158,9 +156,9 @@ defmodule DeltaHtml do
     build_blocks(ops, [node | html], [])
   end
 
-  defp build_blocks([%{"insert" => "\n"}, %{"attributes" => %{"indent" => indent}} = indent_op | ops], html, line) do
-    node = {"p", [{"style", "padding-left: #{2 * indent}em;"}], line}
-    build_blocks([indent_op | ops], [node | html], [])
+  defp build_blocks([%{"insert" => "\n"}, %{"attributes" => attrs} = attr_op | ops], html, line) when line != [] do
+    node = {"p", line_attrs(attrs), line}
+    build_blocks([attr_op | ops], [node | html], [])
   end
 
   defp build_blocks([%{"insert" => "\n"} | ops], html, line) do
@@ -224,7 +222,9 @@ defmodule DeltaHtml do
     "#{prefix}#{id}"
   end
 
+  defp format_inline(%{"insert" => %{} = _unsupported_embed}), do: ""
   defp format_inline(%{"insert" => text}) when is_binary(text), do: text
+  defp format_inline(%{"insert" => _unsupported}), do: ""
 
   defp delete_attribute(op, key) do
     case Map.delete(op["attributes"], key) do
@@ -233,27 +233,91 @@ defmodule DeltaHtml do
     end
   end
 
-  # Add list item: Merge into existing list if possible, else add new list
+  defp line_attrs(attrs) do
+    styles =
+      []
+      |> add_line_style("text-align", attrs["align"])
+      |> add_line_style("padding-left", indent_to_padding(attrs["indent"]))
+      |> add_line_style("direction", direction_to_css(attrs["direction"]))
+      |> Enum.reverse()
+
+    if styles == [] do
+      []
+    else
+      [{"style", Enum.join(styles, " ")}]
+    end
+  end
+
+  defp list_item_attrs(attrs), do: attrs |> Map.delete("indent") |> line_attrs()
+
+  defp add_line_style(styles, _key, nil), do: styles
+  defp add_line_style(styles, _key, ""), do: styles
+  defp add_line_style(styles, key, value), do: ["#{key}: #{value};" | styles]
+
+  defp indent_to_padding(indent) when is_integer(indent) and indent > 0, do: "#{2 * indent}em"
+
+  defp indent_to_padding(indent) when is_binary(indent) do
+    case Integer.parse(indent) do
+      {parsed, ""} -> indent_to_padding(parsed)
+      _ -> nil
+    end
+  end
+
+  defp indent_to_padding(_), do: nil
+
+  defp direction_to_css("rtl"), do: "rtl"
+  defp direction_to_css(_), do: nil
+
+  # Add list item: merge into existing list when possible, else add a new top-level list.
   defp add_li(html, node, tag, indent) do
     case html do
-      [{^tag, _, _} = list | html] -> [merge_li(list, node, tag, indent) | html]
-      html -> [new_list(node, tag, indent) | html]
+      [{list_tag, _, _} = list | rest] when list_tag in ~w(ol ul) ->
+        if indent == 0 and list_tag != tag do
+          [new_list(node, tag, 0) | html]
+        else
+          [merge_li(list, node, tag, indent) | rest]
+        end
+
+      _ ->
+        [new_list(node, tag, indent) | html]
     end
   end
 
   defp new_list(node, tag, 0), do: {tag, [], [node]}
-  defp new_list(node, tag, indent) when indent > 0, do: {tag, [], [new_list(node, tag, indent - 1)]}
 
-  defp merge_li({tag, [], children}, node, tag, 0), do: {tag, [], [node | children]}
+  defp new_list(node, tag, indent) when indent > 0 do
+    {tag, [], [new_parent_li(node, tag, indent)]}
+  end
 
-  defp merge_li(list, node, tag, indent) when indent > 0 do
-    case list do
-      {^tag, [], [{^tag, _, _} = nested | rest]} ->
-        {tag, [], [merge_li(nested, node, tag, indent - 1) | rest]}
+  defp new_parent_li(node, tag, 1), do: {"li", [], [new_list(node, tag, 0)]}
+  defp new_parent_li(node, tag, indent) when indent > 1, do: {"li", [], [new_list(node, tag, indent - 1)]}
 
-      {^tag, [], rest} ->
-        {tag, [], [new_list(node, tag, indent - 1) | rest]}
-    end
+  defp merge_li({tag, attrs, children}, node, tag, 0), do: {tag, attrs, [node | children]}
+
+  defp merge_li({list_tag, attrs, [{"li", _, _} = li | rest]}, node, tag, indent) when indent > 0 do
+    {list_tag, attrs, [merge_li_into_item(li, node, tag, indent) | rest]}
+  end
+
+  defp merge_li({list_tag, attrs, children}, node, tag, indent) when indent > 0 do
+    {list_tag, attrs, [new_parent_li(node, tag, indent) | children]}
+  end
+
+  defp merge_li_into_item({"li", attrs, [{nested_tag, _, _} = nested | rest]}, node, tag, 1)
+       when nested_tag in ~w(ol ul) and nested_tag == tag do
+    {"li", attrs, [merge_li(nested, node, tag, 0) | rest]}
+  end
+
+  defp merge_li_into_item({"li", attrs, children}, node, tag, 1) do
+    {"li", attrs, [new_list(node, tag, 0) | children]}
+  end
+
+  defp merge_li_into_item({"li", attrs, [{nested_tag, _, _} = nested | rest]}, node, tag, indent)
+       when nested_tag in ~w(ol ul) and indent > 1 do
+    {"li", attrs, [merge_li(nested, node, tag, indent - 1) | rest]}
+  end
+
+  defp merge_li_into_item({"li", attrs, children}, node, tag, indent) when indent > 1 do
+    {"li", attrs, [new_list(node, tag, indent - 1) | children]}
   end
 
   # Deep reverse after processing all ops

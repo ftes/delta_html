@@ -11,6 +11,35 @@ defmodule DeltaHtmlTest do
     assert to_html([%{"insert" => "word\n"}]) == "<p>word</p>"
   end
 
+  test "single word without trailing newline" do
+    assert to_html([%{"insert" => "word"}]) == "<p>word</p>"
+  end
+
+  test "multiline formatted text in a single op preserves formatting" do
+    assert to_html([
+             %{"attributes" => %{"bold" => true}, "insert" => "a\nb"},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p><strong>a</strong></p><p><strong>b</strong></p>"
+  end
+
+  test "unsupported embed is ignored instead of raising" do
+    assert to_html([
+             %{"insert" => %{"image" => "https://example.com/a.png"}},
+             %{"insert" => "\n"}
+           ]) ==
+             "<p><br/></p>"
+  end
+
+  test "unsupported embed in a text line is skipped" do
+    assert to_html([
+             %{"insert" => "A"},
+             %{"insert" => %{"video" => "https://example.com/video"}},
+             %{"insert" => "B\n"}
+           ]) ==
+             "<p>AB</p>"
+  end
+
   test "preserve whitespace" do
     assert to_html([%{"insert" => "This    has    multiple\tspaces\n"}], preserve_whitespace: true) ==
              "<div style=\"white-space: pre-wrap;\"><p>This    has    multiple\tspaces</p></div>"
@@ -164,7 +193,7 @@ defmodule DeltaHtmlTest do
              %{"insert" => "a"},
              %{"attributes" => %{"indent" => 1, "list" => "ordered"}, "insert" => "\n"}
            ]) ==
-             "<ol><li>1</li><ol><li>a</li></ol></ol>"
+             "<ol><li>1<ol><li>a</li></ol></li></ol>"
   end
 
   test "numbered list and bullet list" do
@@ -175,6 +204,14 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"list" => "bullet"}, "insert" => "\n"}
            ]) ==
              "<ol><li>1</li></ol><ul><li>x</li></ul>"
+  end
+
+  test "list item with alignment and direction" do
+    assert to_html([
+             %{"insert" => "rtl item"},
+             %{"attributes" => %{"align" => "right", "direction" => "rtl", "list" => "bullet"}, "insert" => "\n"}
+           ]) ==
+             ~s(<ul><li style="text-align: right; direction: rtl;">rtl item</li></ul>)
   end
 
   test "deeply nested lists" do
@@ -196,7 +233,7 @@ defmodule DeltaHtmlTest do
              %{"insert" => "n2.1.1"},
              %{"attributes" => %{"indent" => 2, "list" => "ordered"}, "insert" => "\n"}
            ]) ==
-             "<ul><li>b1</li><li>b2</li><ul><li>b2.1</li><ul><li>b2.1.1</li></ul></ul></ul><ol><ol><li>n1.1</li></ol><li>n1</li><li>n2</li><ol><ol><li>n2.1.1</li></ol></ol></ol>"
+             "<ul><li>b1</li><li>b2<ul><li>b2.1<ul><li>b2.1.1</li></ul></li></ul><ol><li>n1.1</li></ol></li></ul><ol><li>n1</li><li>n2<ol><li><ol><li>n2.1.1</li></ol></li></ol></li></ol>"
   end
 
   test "placeholder" do
@@ -368,6 +405,22 @@ defmodule DeltaHtmlTest do
              %{"attributes" => %{"align" => "right"}, "insert" => "\n"}
            ]) ==
              ~s(<p>left</p><p style="text-align: center;">center</p><p style="text-align: right;">right</p>)
+  end
+
+  test "text direction - rtl" do
+    assert to_html([
+             %{"insert" => "rtl"},
+             %{"attributes" => %{"direction" => "rtl"}, "insert" => "\n"}
+           ]) ==
+             ~s(<p style="direction: rtl;">rtl</p>)
+  end
+
+  test "header with alignment" do
+    assert to_html([
+             %{"insert" => "Heading"},
+             %{"attributes" => %{"header" => 1, "align" => "center"}, "insert" => "\n"}
+           ]) ==
+             ~s(<h1 style="text-align: center;">Heading</h1>)
   end
 
   test "mention with size and indent" do

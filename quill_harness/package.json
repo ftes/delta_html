@@ -1,0 +1,14 @@
+{
+  "name": "delta-html-quill-harness",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference Quill renderer harness for delta_html tests",
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "jsdom": "16.7.0",
+    "quill": "2.0.3"
+  }
+}

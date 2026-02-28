@@ -10,3 +10,18 @@ Convert Quill (Slab) [Delta](https://quilljs.com/docs/delta) document format to 
 Render rich text entered by non technical users for web pages or emails.
 
 **Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
+
+## Quill Parity Harness
+
+The repository includes a JS harness under `quill_harness/` that renders Delta with Quill 2 (`getSemanticHTML`) and feeds parity checks in Elixir tests.
+
+```bash
+npm ci --prefix quill_harness
+mix test --include quill
+```
+
+To require the harness (fail instead of skip when Node/deps are missing):
+
+```bash
+REQUIRE_QUILL_HARNESS=1 mix test --include quill
+```
