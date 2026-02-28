@@ -10,6 +10,7 @@ Convert Quill (Slab) [Delta](https://quilljs.com/docs/delta) document format to 
 Render rich text entered by non technical users for web pages or emails.
 
 **Documentation:** [hexdocs.pm](https://hexdocs.pm/delta_html/)
+HexDocs includes a dedicated `GUIDES` section (Getting Started, Rendering Options, Security Policy, and Quill Parity Notes).
 
 ## Usage
 

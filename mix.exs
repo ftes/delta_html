@@ -64,9 +64,25 @@ defmodule DeltaHtml.MixProject do
   defp docs do
     [
       main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url,
+      extra_section: "GUIDES",
       extras: [
         "README.md": [title: "Overview"],
+        "docs/getting-started.md": [title: "Getting Started"],
+        "docs/rendering-options.md": [title: "Rendering Options"],
+        "docs/security-policy.md": [title: "Security Policy"],
+        "docs/quill-parity.md": [title: "Quill Parity Notes"],
         "CHANGELOG.md": [title: "Changelog"]
+      ],
+      groups_for_extras: [
+        "Getting Started": ["docs/getting-started.md"],
+        Guides: [
+          "docs/rendering-options.md",
+          "docs/security-policy.md",
+          "docs/quill-parity.md"
+        ],
+        Reference: ["CHANGELOG.md"]
       ]
     ]
   end

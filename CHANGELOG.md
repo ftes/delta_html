@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added structured HexDocs guides (`docs/`) with grouped ExDoc navigation for getting started, rendering options, security policy, and Quill parity notes.
+
+### Changed
+- Improved ExDoc configuration with guide grouping and source references for clearer hexdocs.pm output.
 
 ## [0.5.0] - 2026-02-28
 ### Added
