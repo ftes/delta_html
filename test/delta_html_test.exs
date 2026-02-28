@@ -524,4 +524,44 @@ defmodule DeltaHtmlTest do
            ) ==
              ~s(<ul><li class="ql-align-right ql-direction-rtl" data-list="checked">rtl item</li></ul>)
   end
+
+  test "quill_css mode applies classes to header and blockquote blocks" do
+    assert to_html(
+             [
+               %{"insert" => "heading"},
+               %{
+                 "attributes" => %{"header" => 2, "align" => "justify", "direction" => "rtl", "indent" => 1},
+                 "insert" => "\n"
+               }
+             ],
+             quill_css: true
+           ) ==
+             ~s(<h2 class="ql-align-justify ql-direction-rtl ql-indent-1">heading</h2>)
+
+    assert to_html(
+             [
+               %{"insert" => "quote"},
+               %{
+                 "attributes" => %{"blockquote" => true, "align" => "center", "direction" => "rtl", "indent" => 2},
+                 "insert" => "\n"
+               }
+             ],
+             quill_css: true
+           ) ==
+             ~s(<blockquote class="ql-align-center ql-direction-rtl ql-indent-2">quote</blockquote>)
+  end
+
+  test "quill_css mode keeps list nesting for indent and classes for list-item alignment/direction" do
+    assert to_html(
+             [
+               %{"insert" => "nested"},
+               %{
+                 "attributes" => %{"list" => "bullet", "indent" => 1, "align" => "right", "direction" => "rtl"},
+                 "insert" => "\n"
+               }
+             ],
+             quill_css: true
+           ) ==
+             ~s(<ul><li><ul><li class="ql-align-right ql-direction-rtl">nested</li></ul></li></ul>)
+  end
 end

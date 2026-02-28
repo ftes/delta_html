@@ -22,6 +22,20 @@ iex> DeltaHtml.to_html([%{"insert" => "a   b\tc\n"}], preserve_whitespace: true)
 "<div style=\"white-space: pre-wrap;\"><p>a   b\tc\n</p></div>"
 ```
 
+### Quill CSS Mode
+
+Use `quill_css: true` to emit Quill-style classes for block attributes:
+
+```elixir
+iex> DeltaHtml.to_html(
+...>   [%{"insert" => "x"}, %{"attributes" => %{"align" => "center", "direction" => "rtl", "indent" => 2}, "insert" => "\n"}],
+...>   quill_css: true
+...> )
+"<p class=\"ql-align-center ql-direction-rtl ql-indent-2\">x</p>"
+```
+
+Note: this mode is intentionally not identical to Quill `getSemanticHTML()` for all attributes. Quill semantic output commonly uses inline styles for `align`/`direction`, while `quill_css: true` prefers classes for easier reuse of Quill theme CSS.
+
 ## Supported Features
 
 ### Inline
